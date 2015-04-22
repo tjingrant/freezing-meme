@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LinkedSortedList {
 	boolean debug = false;
+	boolean destructiveChecking = false;
+	boolean hybernate = false;
 	Node start;
 	public enum Methods{
 		DLSL_INSERT, DLSL_CONTAIN, DLSL_DELETE;
@@ -12,6 +14,17 @@ public class LinkedSortedList {
 	
 	public class Verifier extends HashMap<Integer, Integer> {
 		private static final long serialVersionUID = 6759448364384927844L;
+	}
+	
+	public void checkAndHybernate() {
+		if (hybernate) {
+			try {
+				Thread.sleep(1000*100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public class Node {
@@ -70,20 +83,6 @@ public class LinkedSortedList {
 		this.start = new Node(Integer.MIN_VALUE, null, null);
 	}
 	
-//	public Verifier GenerateVerifierForGet(int index, int val, Methods m) {
-//		Verifier v = new Verifier();
-//		Node next = this.start;
-//		
-//		while (next != null)
-//			v.add(next._ver.get());
-//		return v;
-//	}
-//	
-//	public boolean CompareVerifier(Temporary res,) {
-//		return false;
-//	}
-	
-	//insert,contains,delete
 	public void Insert(int a) {
 		TemporaryResult tr = new TemporaryResult(false);
 		int counter = 0;
@@ -112,14 +111,17 @@ public class LinkedSortedList {
     	}
     	if (next == null) {
     		int ver = now._ver.get();
+    		checkAndHybernate();
     		if ((ver % 2) == 1) {
     			return new TemporaryResult(false);
     		} else if (!now._ver.compareAndSet(ver, ver+1)) {
     			return new TemporaryResult(false);
     		}
+    		checkAndHybernate();
     		//at this point, now is at hand
     		now.setNext(newNode);
 			newNode.setPrev(now);
+			checkAndHybernate();
 			now._ver.incrementAndGet();
 			return new TemporaryResult(true);
 		}
@@ -130,6 +132,7 @@ public class LinkedSortedList {
     		} else if (!now._ver.compareAndSet(ver, ver+1)) {
     			return new TemporaryResult(false);
     		}
+    		checkAndHybernate();
     		// at this point, now is claimed
     		ver = next._ver.get();
     		if ((ver % 2) == 1) {
@@ -144,6 +147,7 @@ public class LinkedSortedList {
     		newNode.setPrev(now);
     		next.setPrev(newNode);
     		newNode.setNext(next);
+    		checkAndHybernate();
     		now._ver.incrementAndGet(); //becomes even, relinquishing control
     		next._ver.incrementAndGet(); //becomes even, relinquishing control
     		return new TemporaryResult(true);
@@ -166,6 +170,7 @@ public class LinkedSortedList {
 			if (counter > 100) {
 				System.err.append("Unfair senario occurs");
 			}
+			checkAndHybernate();
 		}
 		return tr.b_res;
     }
@@ -177,6 +182,7 @@ public class LinkedSortedList {
     		if ((ver % 2) == 1) {       //someone is manipulating it
     			return new TemporaryResult(false);
     		}
+    		checkAndHybernate();
     		if ((val == next.getInt())) {
     			TemporaryResult tr = new TemporaryResult(true, true);
     			tr._verifier.put(next.hashCode(), ver);
@@ -192,6 +198,7 @@ public class LinkedSortedList {
 		int counter = 0;
 		while(!tr._completed) {
 			tr = this._Delete(val);
+			checkAndHybernate();
 			counter ++;
 			if (debug && (counter > 0)) {
 				System.out.println("DELETE restart due to failed transaction");
@@ -205,6 +212,7 @@ public class LinkedSortedList {
 	public TemporaryResult _Delete(int val) {
 		Node next = this.start;
 		while(next != null) {
+			checkAndHybernate();
 			if (next.getNext() == null) {
 				int ver = next.getPrev()._ver.get();
 	    		if ((ver % 2) == 1) {
@@ -216,6 +224,7 @@ public class LinkedSortedList {
 				next.getPrev()._ver.incrementAndGet();
 				return new TemporaryResult(true);
 			}
+			checkAndHybernate();
 			if (val == next.getInt()) {
 				Node p = next.getPrev();
 				Node n = next.getNext();
@@ -239,6 +248,7 @@ public class LinkedSortedList {
 				n.setPrev(p);
 				n._ver.incrementAndGet();
 				p._ver.incrementAndGet();
+				checkAndHybernate();
 				return new TemporaryResult(true);
 			}
 			next = next.getNext();
@@ -255,18 +265,14 @@ public class LinkedSortedList {
     }
     
 	public boolean invariantCheck() {
-//		boolean inv = true;
-//		Node now = this.start.getNode();
-//		Node next = now.getNode();
-//		if (next == null)
-//			return true; //trivial case
-//		int former = now.getInt();
-//		int latter = next.getNode().getInt();
-//		while(next != null) {
-//			inv = inv && (former <= latter);
-//			next = next.getNode();
-//		}
-//		return inv;
+		Node now = this.start;
+    	Node next = this.start.getNext();
+    	boolean inv = true;
+    	
+    	while (next != null) {
+    	  inv = inv && (now._a <= next._a);	
+    	}
+    	
 		return true;
 	}
 	
