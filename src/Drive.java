@@ -13,7 +13,7 @@ public class Drive {
 //		System.out.print(lsl.invariantCheck());
 		
 		lsl.printOut();
-		for (int j=0; j<5; j++) {
+		for (int j=0; j<1; j++) {
 			(new Thread() {
 				  public void run() {
 					Random generator = new Random();

@@ -99,7 +99,7 @@ public class LinkedSortedList {
 	}
 	
     public TemporaryResult _Insert(int a) {
-    	
+    	checkAndHybernate();
 		Node now = this.start;
     	Node next = this.start.getNext();
 
@@ -111,17 +111,15 @@ public class LinkedSortedList {
     	}
     	if (next == null) {
     		int ver = now._ver.get();
-    		checkAndHybernate();
     		if ((ver % 2) == 1) {
     			return new TemporaryResult(false);
     		} else if (!now._ver.compareAndSet(ver, ver+1)) {
     			return new TemporaryResult(false);
     		}
-    		checkAndHybernate();
+
     		//at this point, now is at hand
     		now.setNext(newNode);
 			newNode.setPrev(now);
-			checkAndHybernate();
 			now._ver.incrementAndGet();
 			return new TemporaryResult(true);
 		}
@@ -132,7 +130,6 @@ public class LinkedSortedList {
     		} else if (!now._ver.compareAndSet(ver, ver+1)) {
     			return new TemporaryResult(false);
     		}
-    		checkAndHybernate();
     		// at this point, now is claimed
     		ver = next._ver.get();
     		if ((ver % 2) == 1) {
@@ -147,7 +144,6 @@ public class LinkedSortedList {
     		newNode.setPrev(now);
     		next.setPrev(newNode);
     		newNode.setNext(next);
-    		checkAndHybernate();
     		now._ver.incrementAndGet(); //becomes even, relinquishing control
     		next._ver.incrementAndGet(); //becomes even, relinquishing control
     		return new TemporaryResult(true);
@@ -170,19 +166,18 @@ public class LinkedSortedList {
 			if (counter > 100) {
 				System.err.append("Unfair senario occurs");
 			}
-			checkAndHybernate();
 		}
 		return tr.b_res;
     }
     
 	public TemporaryResult _Contains(int val) {   //valid only for positive tests, negative test may compromise concurrency significantly
+		checkAndHybernate();
 		Node next = this.start;
     	while(next != null) {
     		int ver = next._ver.get();
     		if ((ver % 2) == 1) {       //someone is manipulating it
     			return new TemporaryResult(false);
     		}
-    		checkAndHybernate();
     		if ((val == next.getInt())) {
     			TemporaryResult tr = new TemporaryResult(true, true);
     			tr._verifier.put(next.hashCode(), ver);
@@ -198,7 +193,6 @@ public class LinkedSortedList {
 		int counter = 0;
 		while(!tr._completed) {
 			tr = this._Delete(val);
-			checkAndHybernate();
 			counter ++;
 			if (debug && (counter > 0)) {
 				System.out.println("DELETE restart due to failed transaction");
@@ -210,9 +204,9 @@ public class LinkedSortedList {
 	}
 	
 	public TemporaryResult _Delete(int val) {
+		checkAndHybernate();
 		Node next = this.start;
 		while(next != null) {
-			checkAndHybernate();
 			if (next.getNext() == null) {
 				int ver = next.getPrev()._ver.get();
 	    		if ((ver % 2) == 1) {
@@ -224,7 +218,6 @@ public class LinkedSortedList {
 				next.getPrev()._ver.incrementAndGet();
 				return new TemporaryResult(true);
 			}
-			checkAndHybernate();
 			if (val == next.getInt()) {
 				Node p = next.getPrev();
 				Node n = next.getNext();
@@ -248,7 +241,6 @@ public class LinkedSortedList {
 				n.setPrev(p);
 				n._ver.incrementAndGet();
 				p._ver.incrementAndGet();
-				checkAndHybernate();
 				return new TemporaryResult(true);
 			}
 			next = next.getNext();
@@ -271,6 +263,8 @@ public class LinkedSortedList {
     	
     	while (next != null) {
     	  inv = inv && (now._a <= next._a);	
+    	  now = next;
+    	  next = next.getNext();
     	}
     	
 		return true;
