@@ -6,14 +6,24 @@ public class Drive {
 	public static void main(String[] args) {
 		
 		final LinkedSortedList lsl = new LinkedSortedList();
-		Random generator = new Random();
-
+		lsl.Insert(5);
+		System.out.print(lsl.Contains(5));
+		lsl.Delete(5);
+		System.out.print(lsl.Contains(5));
+//		for (int i=0; i<5; i++) {
+//			lsl.Insert(i);
+//			System.out.print(lsl.Contains(4) + "| ");
+//		}
+		
+		lsl.printOut();
 		for (int j=0; j<5; j++) {
 			(new Thread() {
 				  public void run() {
 					Random generator = new Random();
-				    for(int i=0; i<5; i++)
-					  lsl.Insert(generator.nextInt(100));
+				    for(int i=0; i<5; i++) {
+					  lsl.Insert(generator.nextInt(10));
+					  //System.out.print(lsl.Contains(generator.nextInt(10)) + " \n");
+				    }
 				  }
 			}).start();
 		}
@@ -25,7 +35,7 @@ public class Drive {
 			e.printStackTrace();
 		}
 		
-		lsl.printOut();
+		
 		
 //		int abc = 0;
 //		long start = System.nanoTime();
