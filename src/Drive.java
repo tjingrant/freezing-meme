@@ -13,12 +13,14 @@ public class Drive {
 //		System.out.print(lsl.invariantCheck());
 		
 		lsl.printOut();
-		for (int j=0; j<1; j++) {
+		for (int j=0; j<100; j++) {
 			(new Thread() {
 				  public void run() {
 					Random generator = new Random();
 				    for(int i=0; i<5; i++) {
 					  lsl.Insert(generator.nextInt(10));
+					  lsl.Delete(generator.nextInt(10));
+					  lsl.Contains(generator.nextInt(10));
 					  //System.out.print(lsl.Contains(generator.nextInt(10)) + " \n");
 				    }
 				  }
@@ -33,6 +35,7 @@ public class Drive {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 		System.out.print(lsl.invariantCheck());
 		
 		

@@ -93,7 +93,7 @@ public class LinkedSortedList {
 				System.out.println("INSERT restart due to failed transaction");
 			}
 			if (counter > 100) {
-				System.err.append("Unfair senario occurs");
+				System.err.append("Unfair senario occurs in INSERT\n");
 			}
 		}
 	}
@@ -164,7 +164,7 @@ public class LinkedSortedList {
 				System.out.println("CONTAINS restart due to failed transaction");
 			}
 			if (counter > 100) {
-				System.err.append("Unfair senario occurs");
+				System.err.append("Unfair senario occurs in CONTAINS\n");
 			}
 		}
 		return tr.b_res;
@@ -197,8 +197,8 @@ public class LinkedSortedList {
 			if (debug && (counter > 0)) {
 				System.out.println("DELETE restart due to failed transaction");
 			}
-			if (counter > 100) {
-				System.err.append("Unfair senario occurs");
+			if (counter > 1000) {
+				System.err.append("Unfair senario occurs in DELETE\n");
 			}
 		}
 	}
@@ -207,43 +207,48 @@ public class LinkedSortedList {
 		checkAndHybernate();
 		Node next = this.start;
 		while(next != null) {
-			if (next.getNext() == null) {
-				int ver = next.getPrev()._ver.get();
-	    		if ((ver % 2) == 1) {
-	    			return new TemporaryResult(false);
-	    		} else if (!next.getPrev()._ver.compareAndSet(ver, ver+1)) {
-	    			return new TemporaryResult(false);
-	    		}
-				next.getPrev().setNext(null);
-				next.getPrev()._ver.incrementAndGet();
-				return new TemporaryResult(true);
+			try { //You could potentially lose next during this process;
+				if (next.getNext() == null) {
+					int ver = next.getPrev()._ver.get();
+		    		if ((ver % 2) == 1) {
+		    			return new TemporaryResult(false);
+		    		} else if (!next.getPrev()._ver.compareAndSet(ver, ver+1)) {
+		    			return new TemporaryResult(false);
+		    		}
+					next.getPrev().setNext(null);
+					next.getPrev()._ver.incrementAndGet();
+					return new TemporaryResult(true);
+				} 
+			
+				if (val == next.getInt()) {
+					Node p = next.getPrev();
+					Node n = next.getNext();
+					int ver = n._ver.get();
+		    		if ((ver % 2) == 1) {
+		    			return new TemporaryResult(false);
+		    		} else if (!n._ver.compareAndSet(ver, ver+1)) {
+		    			return new TemporaryResult(false);
+		    		}
+		    		// at this point, now is claimed
+		    		ver = p._ver.get();
+		    		if ((ver % 2) == 1) {
+		    			n._ver.decrementAndGet();
+		    			return new TemporaryResult(false);
+		    		} else if (!p._ver.compareAndSet(ver, ver+1)) {
+		    			n._ver.decrementAndGet();
+		    			return new TemporaryResult(false);
+		    		}
+		    		// at this point, now and next are all claimed
+					p.setNext(n);
+					n.setPrev(p);
+					n._ver.incrementAndGet();
+					p._ver.incrementAndGet();
+					return new TemporaryResult(true);
+				}
+				next = next.getNext();
+			} catch (NullPointerException e) {
+				return new TemporaryResult(false);
 			}
-			if (val == next.getInt()) {
-				Node p = next.getPrev();
-				Node n = next.getNext();
-				int ver = n._ver.get();
-	    		if ((ver % 2) == 1) {
-	    			return new TemporaryResult(false);
-	    		} else if (!n._ver.compareAndSet(ver, ver+1)) {
-	    			return new TemporaryResult(false);
-	    		}
-	    		// at this point, now is claimed
-	    		ver = p._ver.get();
-	    		if ((ver % 2) == 1) {
-	    			n._ver.decrementAndGet();
-	    			return new TemporaryResult(false);
-	    		} else if (!p._ver.compareAndSet(ver, ver+1)) {
-	    			n._ver.decrementAndGet();
-	    			return new TemporaryResult(false);
-	    		}
-	    		// at this point, now and next are all claimed
-				p.setNext(n);
-				n.setPrev(p);
-				n._ver.incrementAndGet();
-				p._ver.incrementAndGet();
-				return new TemporaryResult(true);
-			}
-			next = next.getNext();
 	   }
 	   return new TemporaryResult(true); //okay if it doesn't exist
 	}
